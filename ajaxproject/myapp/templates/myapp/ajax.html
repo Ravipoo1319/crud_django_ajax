@@ -1,0 +1,102 @@
+<script>
+   $("#btnsave").click(function(){
+        console.log("btn clicked");
+        let output = null;
+        let sid = $("#studid").val();
+        let nm = $("#nameid").val();
+        let em = $("#emailid").val();
+        let pass = $("#passid").val();
+        let csrf = $("input[name=csrfmiddlewaretoken").val()
+        console.log(nm,em,pass);
+
+        if (nm == ""){
+            alert("Please enter name");
+        }else if(em == ""){
+            alert("Please enter email");
+        }else if(pass == ""){
+            alert("Please enter password");
+        }else{
+            let myData = {
+                sid : sid,
+                name:nm,
+                email:em,
+                password:pass,
+                csrfmiddlewaretoken: csrf,
+            };
+            $.ajax({
+                url: "{% url 'save' %}",
+                method : "POST",
+                data : myData,
+                success : function(data){
+                    if (data.status){
+                        $("#errorlist").text("Data Added Successfully!");
+                        $("#errorlist").show();
+                        $("#errorlist").attr("class","alert alert-success");
+                        let x = data.stud_data;
+                        for(let i = 0; i < x.length; i++){
+                            output += "<tr><td>" + x[i].id + "</td><td>" + x[i].name + "</td><td>" + x[i].email + "</td><td>" + x[i].password + "</td><td> <input type='button' data-sid="+x[i].id +" class='btn btn-warning btn-sm btn-edit' value='Edit'> <input type='button' data-sid="+x[i].id +" class='btn btn-danger btn-sm btn-del' value='Delete'>"
+                        };
+                        $("#tbody").html(output);
+                        $("form")[0].reset();
+                    }else{
+                        $("#errorlist").text("Data Not Saved!");
+                        $("#errorlist").show();
+                        $("#errorlist").attr("class","alert alert-warning");        
+                
+                    }
+                },
+            });
+        };
+    }) ;
+
+//    Delete data
+$("#tbody").on("click",".btn-del",function(){
+    let id = $(this).attr("data-sid");
+    let csr = $("input[name=csrfmiddlewaretoken]").val();
+    let payload = {
+        sid:id,
+        csrfmiddlewaretoken:csr,
+    }
+    let myThis = this;
+    $.ajax({
+        url : "{% url 'delete' %}",
+        method : "POST",
+        data : payload,
+        success : function(data){
+            if(data.status){
+                $("#errorlist").text("Data Deleted Successfully!");
+                $("#errorlist").show();
+                $("#errorlist").attr("class","alert alert-danger");        
+                $(myThis).closest("tr").fadeOut();
+            }else{
+                $("#errorlist").text("Unable to delete the data.");
+                $("#errorlist").show();
+                $("#errorlist").attr("class","alert alert-warning");
+            }
+        }
+    })
+});
+
+// Editing data
+$("#tbody").on("click",".btn-edit",function(){
+    console.log("edit clicked")
+    let id = $(this).attr("data-sid");
+    let csr = $("input[name=csrfmiddlewaretoken]").val();
+    let payload = {
+        sid : id,
+        csrfmiddlewaretoken : csr,
+    }
+    $.ajax({
+      url : "{% url 'update' %}",
+      method : "POST",
+      data : payload,
+      success : function(data){
+        $("#studid").val(data.sid);
+        $("#nameid").val(data.name);
+        $("#emailid").val(data.email);
+        $("#passid").val(data.password);
+      }  
+    })
+})
+
+</script>
